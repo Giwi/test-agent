@@ -17,6 +17,8 @@ export class Agent {
 
     logger.info("OLLAMA", "début tâche", { task: task.slice(0, 80), model: cfg.ollama.model });
 
+    const responses: string[] = [];
+
     for (let i = 0; i < 10; i++) {
       let result;
       try {
@@ -52,6 +54,7 @@ export class Agent {
         logger.info("OLLAMA", "🧠 raisonnement", { reasoning: result.reasoning });
       }
       if (result.text) {
+        responses.push(result.text);
         logger.info("OLLAMA", "💬 réponse texte", { text: result.text });
       }
 
@@ -68,7 +71,7 @@ export class Agent {
 
       if (result.finishReason === "stop") {
         logger.info("OLLAMA", "tâche terminée");
-        return result.text;
+        return responses.join("\n\n---\n\n");
       }
 
       messages.push(...result.response.messages);
