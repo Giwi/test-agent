@@ -1,0 +1,24 @@
+{
+  "name": "test-agent",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "ai": "^4.3.19",
+    "child_process": "^1.0.2",
+    "ollama-ai-provider": "^1.2.0",
+    "telegraf": "^4.16.3",
+    "util": "^0.12.5",
+    "yaml": "^2.9.0",
+    "zod": "^3.25.76"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}
