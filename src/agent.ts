@@ -28,7 +28,7 @@ export class Agent {
             simulateStreaming: cfg.ollama.simulate_streaming,
           }) as any,
           tools: this.tools,
-          maxSteps: 1,
+          maxSteps: 10,
           messages,
         });
       } catch (error) {
