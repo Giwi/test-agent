@@ -7,29 +7,29 @@ import { logger } from "../logger.js";
 const execAsync = promisify(exec);
 
 function execBash(command: string): Promise<string> {
-  logger.debug("bash", "exécution commande", { command: command.slice(0, 120) });
+  logger.debug("bash", "running command", { command: command.slice(0, 120) });
   return execAsync(command)
     .then(({ stdout, stderr }) => {
-      logger.debug("bash", "commande terminée", {
+      logger.debug("bash", "command done", {
         stdout_size: stdout.length,
         stderr_size: stderr.length,
       });
       let out = stdout;
       if (stderr) out += `\nstderr: ${stderr}`;
       out = out.trim();
-      if (out.length > 1000) out = out.slice(0, 1000) + "\n... (tronqué)";
+      if (out.length > 1000) out = out.slice(0, 1000) + "\n... (truncated)";
       return out;
     })
     .catch((error: any) => {
-      logger.error("bash", "échec commande", { command: command.slice(0, 120), error: error.message });
-      return `Erreur bash: ${error.message}`;
+      logger.error("bash", "command failed", { command: command.slice(0, 120), error: error.message });
+      return `Bash error: ${error.message}`;
     });
 }
 
 export const bashTool = tool({
-  description: "Exécuter une commande bash",
+  description: "Run a bash command",
   parameters: z.object({
-    command: z.string().describe("Commande bash à exécuter"),
+    command: z.string().describe("Bash command to execute"),
   }),
   execute: async ({ command }: { command: string }) => {
     return await execBash(command);

@@ -2,9 +2,9 @@ import { tool } from "ai";
 import { z } from "zod";
 
 export const webFetchTool = tool({
-  description: "Télécharger le contenu textuel d'une page web",
+  description: "Fetch the text content of a web page",
   parameters: z.object({
-    url: z.string().url().describe("URL complète à récupérer"),
+    url: z.string().url().describe("Full URL to fetch"),
   }),
   execute: async ({ url }) => {
     const ctrl = new AbortController();
@@ -17,8 +17,8 @@ export const webFetchTool = tool({
       const text = await res.text();
       return text.slice(0, 8000);
     } catch (err: any) {
-      if (err.name === "AbortError") return "Erreur: requête trop longue (15s)";
-      return `Erreur fetch: ${err.message}`;
+      if (err.name === "AbortError") return "Error: request too long (15s)";
+      return `Fetch error: ${err.message}`;
     } finally {
       clearTimeout(timer);
     }

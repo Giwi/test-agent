@@ -1,3 +1,5 @@
 config.yml
 node_modules/
 .telegram-state.json
+*.md
+!README.md

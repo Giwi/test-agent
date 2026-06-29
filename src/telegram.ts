@@ -3,6 +3,7 @@ import { Agent } from "./agent.js";
 import { devOpsTools } from "./tools/index.js";
 import { loadConfig } from "./config.js";
 import { logger } from "./logger.js";
+import { scheduler } from "./scheduler.js";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,17 +50,17 @@ export async function sendTelegramMessage(text: string): Promise<string> {
   const cfg = loadConfig();
   const id = chatId();
   if (!cfg.telegram.bot_token || !id) {
-    logger.info("TELEGRAM", "notification simulée (pas de token/chat_id)", { text });
-    return "Notification (simulée): " + text;
+    logger.info("TELEGRAM", "simulated notification (no token/chat_id)", { text });
+    return "(Simulated) Notification: " + text;
   }
   try {
     const bot = getBot();
     await bot.telegram.sendMessage(id, text);
-    logger.info("TELEGRAM", "notification envoyée", { length: text.length });
-    return "Notification envoyée sur Telegram";
+    logger.info("TELEGRAM", "notification sent", { length: text.length });
+    return "Notification sent via Telegram";
   } catch (err: any) {
-    logger.error("TELEGRAM", "échec envoi notification", { error: err.message });
-    return `Erreur Telegram: ${err.message}`;
+    logger.error("TELEGRAM", "notification send failed", { error: err.message });
+    return `Telegram error: ${err.message}`;
   }
 }
 
@@ -67,19 +68,19 @@ async function processMessage(text: string) {
   const agent = new Agent(devOpsTools);
   const response = await agent.run(text);
   if (!response) {
-    logger.info("TELEGRAM", "pas de réponse textuelle");
+    logger.info("TELEGRAM", "no text response");
     return;
   }
   const bot = getBot();
   await bot.telegram.sendMessage(chatId(), response);
-  logger.info("TELEGRAM", "réponse envoyée", { length: response.length });
+  logger.info("TELEGRAM", "reply sent", { length: response.length });
 }
 
 export async function startTelegramBot() {
   const cfg = loadConfig();
   const token = cfg.telegram.bot_token;
   if (!token) {
-    logger.warn("TELEGRAM", "bot non démarré: token vide");
+    logger.warn("TELEGRAM", "bot not started: empty token");
     return;
   }
 
@@ -100,7 +101,7 @@ export async function startTelegramBot() {
     state.last_message_id = ctx.message.message_id;
     saveState(state);
 
-    logger.info("TELEGRAM", "message reçu", {
+    logger.info("TELEGRAM", "message received", {
       from: ctx.from?.username ?? ctx.from?.id,
       chat: ctx.chat.id,
       text: ctx.message.text,
@@ -109,15 +110,24 @@ export async function startTelegramBot() {
     try {
       await processMessage(ctx.message.text);
     } catch (err: any) {
-      logger.error("TELEGRAM", "erreur traitement message", { error: err.message });
-      await ctx.reply("Désolé, une erreur est survenue.");
+      logger.error("TELEGRAM", "message processing error", { error: err.message });
+      await ctx.reply("Sorry, an error occurred.");
     }
+  });
+
+  scheduler.setRunner(async (prompt: string) => {
+    const agent = new Agent(devOpsTools);
+    const response = await agent.run(prompt);
+    if (response) {
+      await sendTelegramMessage(`**Scheduled task**\n\n${response}`);
+    }
+    return response;
   });
 
   await bot.launch({
     allowedUpdates: ["message"],
   });
-  logger.info("TELEGRAM", "bot démarré");
+  logger.info("TELEGRAM", "bot started");
 
   process.once("SIGINT", () => bot.stop("SIGINT"));
   process.once("SIGTERM", () => bot.stop("SIGTERM"));
