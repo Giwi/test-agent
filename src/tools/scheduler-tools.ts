@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { scheduler } from "../scheduler.js";
+import { scheduler } from "../lib/scheduler.js";
 
 export const scheduleTaskTool = tool({
   description: "Schedule a recurring task with a cron expression. Returns the randomly generated name.",
@@ -16,28 +16,28 @@ export const scheduleTaskTool = tool({
 });
 
 export const listTasksTool = tool({
-  description: "Lister toutes les tâches programmées avec leur nom, description et cron.",
+  description: "List all scheduled tasks with their name, description and cron.",
   parameters: z.object({}),
   execute: async () => {
     const tasks = scheduler.list();
-    if (tasks.length === 0) return "Aucune tâche programmée.";
+    if (tasks.length === 0) return "No scheduled tasks.";
     return tasks
       .map(
         (t) =>
-          `- **${t.name}** : ${t.description}\n  Cron: \`${t.cron}\`, prochaine exécution: ${t.nextRun ?? "inconnue"}`,
+          `- **${t.name}** : ${t.description}\n  Cron: \`${t.cron}\`, next execution: ${t.nextRun ?? "unknown"}`,
       )
       .join("\n");
   },
 });
 
 export const deleteTaskTool = tool({
-  description: "Supprimer (arrêter) une tâche programmée par son nom.",
+  description: "Delete (stop) a scheduled task by its name.",
   parameters: z.object({
-    name: z.string().describe("Nom de la tâche à supprimer (ex: happy_curie)"),
+    name: z.string().describe("Name of the task to delete (e.g. happy_curie)"),
   }),
   execute: async ({ name }) => {
     const ok = scheduler.remove(name);
-    if (ok) return `Tâche "${name}" supprimée.`;
-    return `Aucune tâche trouvée avec le nom "${name}". Utilise l'outil list_tasks pour voir les tâches existantes.`;
+    if (ok) return `Task "${name}" deleted.`;
+    return `No task found with the name "${name}". Use the list_tasks tool to see existing tasks.`;
   },
 });

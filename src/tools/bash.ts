@@ -2,7 +2,7 @@ import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import { tool } from "ai";
 import { z } from "zod";
-import { logger } from "../logger.js";
+import { logger } from "../lib/logger.js";
 
 const execAsync = promisify(exec);
 

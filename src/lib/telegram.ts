@@ -1,6 +1,6 @@
 import { Telegraf } from "telegraf";
 import { Agent } from "./agent.js";
-import { devOpsTools } from "./tools/index.js";
+import { devOpsTools } from "../tools/index.js";
 import { loadConfig } from "./config.js";
 import { logger } from "./logger.js";
 import { scheduler } from "./scheduler.js";

@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { sendTelegramMessage } from "../telegram.js";
+import { sendTelegramMessage } from "../lib/telegram.js";
 
 export const telegramNotifyTool = tool({
   description: "Send a Telegram notification",

@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { loadConfig } from "../config.js";
+import { loadConfig } from "../lib/config.js";
 
 export const webSearchTool = tool({
   description: "Search the web (news, docs, fixes, etc.)",
