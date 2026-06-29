@@ -1,16 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
-
-async function fetchWithTimeout(url: string, timeoutMs = 15_000): Promise<string> {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, { signal: ctrl.signal });
-    return await res.text();
-  } finally {
-    clearTimeout(timer);
-  }
-}
+import { loadConfig } from "../config.js";
 
 export const webSearchTool = tool({
   description: "Rechercher sur le web (actualités, docs, correctifs, etc.)",
@@ -18,44 +8,45 @@ export const webSearchTool = tool({
     query: z.string().describe("Termes de recherche"),
   }),
   execute: async ({ query }) => {
-    const body = new URLSearchParams({ q: query });
-    const html = await fetchWithTimeout(
-      "https://html.duckduckgo.com/html/",
-      15_000,
-    ).catch(() => fetchWithTimeout(
-      `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`,
-      10_000,
-    ));
-
-    if (html.startsWith("{")) {
-      const data: any = JSON.parse(html);
-      const lines: string[] = [];
-      if (data.AbstractText) lines.push(data.AbstractText);
-      if (data.Answer) lines.push(data.Answer);
-      return lines.length ? lines.join("\n") : "Aucun résultat";
+    const cfg = loadConfig();
+    if (!cfg.langsearch.api_key) {
+      return "Erreur: clé API LangSearch non configurée";
     }
 
-    const results: string[] = [];
-    let pos = 0;
-    let n = 0;
-    while (n < 5) {
-      const a = html.indexOf('<a rel="nofollow" class="result__a" href="', pos);
-      if (a === -1) break;
-      const hrefStart = a + 45;
-      const hrefEnd = html.indexOf('"', hrefStart);
-      const href = html.slice(hrefStart, hrefEnd);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15_000);
 
-      const b = html.indexOf('class="result__snippet">', hrefEnd);
-      if (b === -1) break;
-      const textStart = b + 26;
-      const textEnd = html.indexOf("</a>", textStart);
-      const text = html.slice(textStart, textEnd).replace(/<[^>]+>/g, "").trim();
+    try {
+      const res = await fetch("https://api.langsearch.com/v1/web-search", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${cfg.langsearch.api_key}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query, summary: true, count: 5 }),
+        signal: ctrl.signal,
+      });
 
-      results.push(`${text}\n  ${href.replace(/\/\/duckduckgo\.com\/l\/\?uddg=/, "")}`);
-      pos = textEnd;
-      n++;
+      if (!res.ok) {
+        return `Erreur API LangSearch: ${res.status} ${res.statusText}`;
+      }
+
+      const json: any = await res.json();
+      if (json.code !== 200 || !json.data?.webPages?.value?.length) {
+        return "Aucun résultat";
+      }
+
+      return json.data.webPages.value
+        .map(
+          (p: any, i: number) =>
+            `${i + 1}. ${p.name}\n   ${p.url}\n   ${p.summary || p.snippet || ""}`,
+        )
+        .join("\n\n");
+    } catch (err: any) {
+      if (err.name === "AbortError") return "Erreur: délai d'attente dépassé (15s)";
+      return `Erreur: ${err.message}`;
+    } finally {
+      clearTimeout(timer);
     }
-
-    return results.length ? results.join("\n\n") : "Aucun résultat";
   },
 });

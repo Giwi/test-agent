@@ -14,6 +14,9 @@ export interface Config {
     model: string;
     simulate_streaming: boolean;
   };
+  langsearch: {
+    api_key: string;
+  };
 }
 
 let _config: Config | undefined;
