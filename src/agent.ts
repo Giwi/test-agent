@@ -27,7 +27,7 @@ export class Agent {
             numCtx: 8192,
           }) as any,
           tools: this.tools,
-          maxSteps: 2,
+          maxSteps: 1,
           messages,
         });
       } catch (error) {
