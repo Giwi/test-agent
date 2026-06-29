@@ -15,7 +15,7 @@ function getBot(): Telegraf {
   if (!_bot) {
     const cfg = loadConfig();
     if (cfg.telegram.bot_token) {
-      _bot = new Telegraf(cfg.telegram.bot_token, { handlerTimeout: 0 });
+      _bot = new Telegraf(cfg.telegram.bot_token, { handlerTimeout: 300_000 });
     }
   }
   return _bot!;
