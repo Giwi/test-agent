@@ -23,7 +23,7 @@ export const webSearchTool = tool({
           Authorization: `Bearer ${cfg.langsearch.api_key}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ query, summary: true, count: 5 }),
+        body: JSON.stringify({ query, summary: false, count: 3 }),
         signal: ctrl.signal,
       });
 

@@ -17,8 +17,6 @@ export class Agent {
 
     logger.info("OLLAMA", "début tâche", { task: task.slice(0, 80), model: cfg.ollama.model });
 
-    const responses: string[] = [];
-
     for (let i = 0; i < 10; i++) {
       let result;
       try {
@@ -26,9 +24,10 @@ export class Agent {
         result = await generateText({
           model: ollama(cfg.ollama.model, {
             simulateStreaming: cfg.ollama.simulate_streaming,
+            numCtx: 8192,
           }) as any,
           tools: this.tools,
-          maxSteps: 10,
+          maxSteps: 2,
           messages,
         });
       } catch (error) {
@@ -53,7 +52,6 @@ export class Agent {
         logger.info("OLLAMA", "🧠 raisonnement", { reasoning: result.reasoning });
       }
       if (result.text) {
-        responses.push(result.text);
         logger.info("OLLAMA", "💬 réponse texte", { text: result.text });
       }
 
@@ -70,7 +68,7 @@ export class Agent {
 
       if (result.finishReason === "stop") {
         logger.info("OLLAMA", "tâche terminée");
-        return responses.join("\n\n---\n\n");
+        return result.text;
       }
 
       messages.push(...result.response.messages);

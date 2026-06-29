@@ -14,8 +14,11 @@ function execBash(command: string): Promise<string> {
         stdout_size: stdout.length,
         stderr_size: stderr.length,
       });
-      if (stderr) return `stdout: ${stdout}\nstderr: ${stderr}`;
-      return stdout.trim();
+      let out = stdout;
+      if (stderr) out += `\nstderr: ${stderr}`;
+      out = out.trim();
+      if (out.length > 1000) out = out.slice(0, 1000) + "\n... (tronqué)";
+      return out;
     })
     .catch((error: any) => {
       logger.error("bash", "échec commande", { command: command.slice(0, 120), error: error.message });
