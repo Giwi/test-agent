@@ -5,6 +5,13 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+export interface McpServerConfig {
+  command?: string;
+  args?: string[];
+  url?: string;
+  env?: Record<string, string>;
+}
+
 export interface Config {
   telegram: {
     bot_token: string;
@@ -17,13 +24,16 @@ export interface Config {
   langsearch: {
     api_key: string;
   };
+  mcp?: {
+    servers?: Record<string, McpServerConfig>;
+  };
 }
 
 let _config: Config | undefined;
 
 export function loadConfig(): Config {
   if (_config) return _config;
-  const path = resolve(__dirname, "..", "config.yml");
+  const path = resolve(__dirname, "..", "..", "config.yml");
   const raw = readFileSync(path, "utf-8");
   _config = parse(raw) as Config;
   return _config;

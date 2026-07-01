@@ -4,6 +4,7 @@ import { devOpsTools } from "../tools/index.js";
 import { loadConfig } from "./config.js";
 import { logger } from "./logger.js";
 import { scheduler } from "./scheduler.js";
+import { initMcpServers, shutdownMcpServers } from "./mcp.js";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,6 +16,8 @@ interface BotState {
   last_update_id: number;
   last_message_id: number;
 }
+
+let allTools: Record<string, any>;
 
 function loadState(): BotState {
   try {
@@ -65,7 +68,7 @@ export async function sendTelegramMessage(text: string): Promise<string> {
 }
 
 async function processMessage(text: string) {
-  const agent = new Agent(devOpsTools);
+  const agent = new Agent(allTools);
   const response = await agent.run(text);
   if (!response) {
     logger.info("TELEGRAM", "no text response");
@@ -83,6 +86,9 @@ export async function startTelegramBot() {
     logger.warn("TELEGRAM", "bot not started: empty token");
     return;
   }
+
+  const mcpTools = await initMcpServers();
+  allTools = { ...Object.fromEntries(devOpsTools), ...mcpTools };
 
   const state = loadState();
   const bot = getBot();
@@ -116,7 +122,7 @@ export async function startTelegramBot() {
   });
 
   scheduler.setRunner(async (prompt: string) => {
-    const agent = new Agent(devOpsTools);
+    const agent = new Agent(allTools);
     const response = await agent.run(prompt);
     if (response) {
       await sendTelegramMessage(`**Scheduled task**\n\n${response}`);
@@ -129,6 +135,6 @@ export async function startTelegramBot() {
   });
   logger.info("TELEGRAM", "bot started");
 
-  process.once("SIGINT", () => bot.stop("SIGINT"));
-  process.once("SIGTERM", () => bot.stop("SIGTERM"));
+  process.once("SIGINT", async () => { await shutdownMcpServers(); bot.stop("SIGINT"); });
+  process.once("SIGTERM", async () => { await shutdownMcpServers(); bot.stop("SIGTERM"); });
 }

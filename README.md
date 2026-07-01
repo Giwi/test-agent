@@ -15,23 +15,7 @@ LLM-driven DevOps agent (Ollama) that listens to Telegram messages and executes 
 # Install dependencies
 yarn
 
-# Edit the configuration file
-# config.yml is already present — fill in your values
-```
-
-Configure `config.yml`:
-
-```yaml
-telegram:
-  bot_token: "1234567890:ABCdef..."   # Telegram bot token
-  chat_id: 123456789                   # allowed chat (optional, 0 = any)
-
-ollama:
-  model: "qwen2.5:7b"                  # Ollama model
-  simulate_streaming: true
-
-langsearch:
-  api_key: "your-key"                  # https://langsearch.com/api-keys
+# Edit config.yml with your Telegram token, Ollama model, etc.
 ```
 
 Run the agent:
@@ -43,8 +27,7 @@ yarn start
 ## Available Tools
 
 | Tool | Description |
-|---|---|---|
-| `check_server_health` | Simulate a server health check |
+|---|---|
 | `run_bash_command` | Execute a local bash command |
 | `telegram_notify` | Send a notification via Telegram |
 | `web_search` | Search the web (LangSearch API) |
@@ -53,24 +36,26 @@ yarn start
 | `list_tasks` | List all scheduled tasks |
 | `delete_task` | Remove a scheduled task by name |
 
+MCP servers defined in `config.yml` are loaded at startup and merged as additional tools (e.g., weather lookup).
+
 ## Prompt Samples
 
 Send these to the Telegram bot:
 
 | Prompt | What it does |
 |---|---|
-| `check le serveur example.com` | Simulate a health check |
-| `exécute "ls -la /tmp" en bash` | Run a bash command |
-| `cherche les dernières news sur Kubernetes` | Web search via LangSearch |
-| `récupère le contenu de https://example.com` | Fetch a URL |
-| `prévient moi que le déploiement est fini` | Send a Telegram notification |
-| `programme un check serveur tous les jours à 9h avec le prompt "check le serveur web"` | Schedule a daily cron task |
-| `liste les tâches programmées` | List scheduled tasks |
-| `supprime la tâche happy_curie` | Delete a scheduled task |
+| `run ls -la /tmp` | Run a bash command |
+| `search for latest Kubernetes news` | Web search via LangSearch |
+| `fetch https://example.com` | Fetch a URL |
+| `notify me that the deployment is done` | Send a Telegram notification |
+| `schedule a server check daily at 9am` | Schedule a daily cron task |
+| `list scheduled tasks` | List scheduled tasks |
+| `delete task happy_curie` | Delete a scheduled task |
+| `what is the weather in Paris?` | Weather via MCP (if configured) |
 
 ## Logging
 
-Logs include a component tag (`TELEGRAM`, `OLLAMA`, `SSH`) and a level (`INFO`, `DEBUG`, `WARN`, `ERROR`).
+Logs include a component tag (`TELEGRAM`, `OLLAMA`, `MCP`) and a level (`INFO`, `DEBUG`, `WARN`, `ERROR`).
 
 Verbosity control:
 
@@ -82,8 +67,35 @@ LOG_LEVEL=debug yarn start
 
 All configuration lives in `config.yml` (gitignored).
 
+```yaml
+telegram:
+  bot_token: "..."    # Telegram bot token
+  chat_id: 123456789  # allowed chat (optional)
+
+ollama:
+  model: "qwen2.5:7b"
+  simulate_streaming: true
+
+langsearch:
+  api_key: "sk-..."   # https://langsearch.com/api-keys
+
+mcp:
+  servers:
+    weather:
+      command: npx
+      args: ["-y", "@swonixs/weatherapi-mcp"]
+      env:
+        WEATHER_API_KEY: "your-key"
+```
+
+MCP servers use Claude Desktop config format — auto-detected: `url` → SSE transport, `command` → stdio transport.
+
 The bot uses `handlerTimeout: 300_000` (5 min) in Telegraf to allow long LLM calls.
 
 Environment variables:
 
 - `LOG_LEVEL` — log level (`debug`, `info`, `warn`, `error` — default: `info`)
+
+## MCP Compatibility
+
+See `AGENTS.md` for notes on MCP server compatibility with Ollama `qwen2.5:7b`. Servers with long descriptions or complex parameter schemas may crash the model runner.

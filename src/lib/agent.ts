@@ -7,15 +7,15 @@ import { logger } from "./logger.js";
 export class Agent {
   private tools: Record<string, any>;
 
-  constructor(toolDefs: readonly (readonly [string, any])[]) {
-    this.tools = Object.fromEntries(toolDefs);
+  constructor(tools: Record<string, any>) {
+    this.tools = tools;
   }
 
   async run(task: string) {
     const cfg = loadConfig();
     const messages: CoreMessage[] = [{ role: "user", content: task }];
 
-    logger.info("OLLAMA", "starting task", { task: task.slice(0, 80), model: cfg.ollama.model });
+    logger.info("OLLAMA", "starting task", { task: task.slice(0, 80), model: cfg.ollama.model, toolCount: Object.keys(this.tools).length });
 
     const responses: string[] = [];
 
@@ -44,7 +44,7 @@ export class Agent {
           } as CoreMessage);
           continue;
         }
-        logger.error("OLLAMA", "LLM call error", { error: (error as Error).message });
+        logger.error("OLLAMA", "LLM call error", { error: (error as Error).message, stack: (error as Error).stack?.slice(0, 500) });
         throw error;
       }
 
